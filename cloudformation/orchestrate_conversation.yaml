@@ -1,0 +1,20 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+  LambdaExecutionRoleArn:
+    Type: String
+Resources:
+  OrchestrateConversation:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: CT05_Orchestrate_Conversation
+      Runtime: python3.12
+      Handler: lambda_function.lambda_handler
+      Role: !Ref LambdaExecutionRoleArn
+      Code:
+        S3Bucket: ct05-cloudformation-artifacts
+        S3Key: orchestrate_conversation.zip
+      Timeout: 30
+      Environment:
+        Variables:
+          TABLE_NAME: CT05_Store_Context
+          # (pass DynamoDB table name or other params)

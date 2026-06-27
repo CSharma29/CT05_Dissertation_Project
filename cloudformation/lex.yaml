@@ -1,0 +1,19 @@
+Type: AWS::IAM::Role
+Properties:
+  AssumeRolePolicyDocument:
+    Version: "2012-10-17"
+    Statement:
+      - Effect: Allow
+        Principal:
+          Service: lexv2.amazonaws.com
+        Action: sts:AssumeRole
+  Path: "/"
+  Policies:
+    - PolicyName: LexRuntimeRolePolicy
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Action:
+              - polly:SynthesizeSpeech
+              - comprehend:DetectSentiment
+            Resource: "*"

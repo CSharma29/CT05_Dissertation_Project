@@ -1,0 +1,28 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Resources:
+  conversationContextTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: CT05_Store_Context
+      AttributeDefinitions:
+      - AttributeName: user_id
+        AttributeType: S
+      - AttributeName: context_summary
+        AttributeType: S
+      KeySchema:
+      - AttributeName: user_id
+        KeyType: HASH
+      - AttributeName: context_summary
+        KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      TimeToLiveSpecification:
+        AttributeName: TTL
+        Enabled: false
+Outputs:
+  ConversationTableName:
+    Description: DynamoDB Table Name
+    Value: !Ref conversationContextTable
+
+  ConversationTableArn:
+    Description: DynamoDB Table ARN
+    Value: !GetAtt conversationContextTable.Arn

@@ -1,0 +1,36 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Resources:
+  DynamoDBStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: dynamodb.yaml
+
+  IAMRolesStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: DynamoDBStack
+    Properties:
+      TemplateURL: iam_roles.yaml
+
+  LambdaStack1:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: IAMRolesStack
+    Properties:
+      TemplateURL: handle_conversation.yaml
+      Parameters:
+        LambdaExecutionRoleArn: !GetAtt IAMRolesStack.Outputs.LambdaExecutionRoleArn
+
+  LambdaStack2:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: IAMRolesStack
+    Properties:
+      TemplateURL: orchestrate_conversation.yaml
+      Parameters:
+        LambdaExecutionRoleArn: !GetAtt IAMRolesStack.Outputs.LambdaExecutionRoleArn
+
+  LexBotStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: 
+      - LambdaStack1
+      - LambdaStack2
+    Properties:
+      TemplateURL: lex.yaml
