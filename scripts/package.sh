@@ -2,14 +2,9 @@
 
 set -Eeuo pipefail
 
-##############################################
-# Configuration
-##############################################
-
-AWS_REGION="ap-south-1"
-ARTIFACT_BUCKET="ct05-cloudformation-artifacts"
-TEMPLATE_FILE="cloudformation/main.yaml"
-PACKAGED_TEMPLATE="packaged.yaml"
+# Source shared config
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/config/config.sh"
 
 ##############################################
 # Logging Functions

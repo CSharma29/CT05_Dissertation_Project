@@ -1,19 +1,110 @@
-Type: AWS::IAM::Role
-Properties:
-  AssumeRolePolicyDocument:
-    Version: "2012-10-17"
-    Statement:
-      - Effect: Allow
-        Principal:
-          Service: lexv2.amazonaws.com
-        Action: sts:AssumeRole
-  Path: "/"
-  Policies:
-    - PolicyName: LexRuntimeRolePolicy
-      PolicyDocument:
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Creates the Amazon Lex V2 Bot for the CT05 Intelligent Contact Centre.
+
+Resources:
+  LexBotRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: CT05LexBotRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
         Statement:
           - Effect: Allow
-            Action:
-              - polly:SynthesizeSpeech
-              - comprehend:DetectSentiment
-            Resource: "*"
+            Principal:
+              Service: lexv2.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: LexBotPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: PollyTTSAccess
+                Effect: Allow
+                Action:
+                  - polly:SynthesizeSpeech
+                Resource: "*"
+                Condition:
+                  StringEquals:
+                    aws:RequestedRegion: !Ref AWS::Region
+
+              - Sid: ComprehendSentimentAccess
+                Effect: Allow
+                Action:
+                  - comprehend:DetectSentiment
+                Resource: "*"
+                Condition:
+                  StringEquals:
+                    aws:RequestedRegion: !Ref AWS::Region
+
+  LexBot:
+    Type: AWS::Lex::Bot
+    DependsOn: LexBotRole
+    Properties:
+      Name: CT05_Build_Conversation
+      RoleArn: !GetAtt LexBotRole.Arn
+      IdleSessionTTLInSeconds: 300
+      DataPrivacy:
+        ChildDirected: false
+      AutoBuildBotLocales: true
+      BotLocales:
+        - LocaleId: en_GB
+          NluConfidenceThreshold: 0.40
+          VoiceSettings:
+            VoiceId: Amy
+          Intents:
+            #################################################
+            # Welcome User Intent
+            #################################################
+            - Name: WelcomeUserIntent
+              Description: >
+                Greets the user and initialises the conversation session.
+              SampleUtterances:
+                - Utterance: "Hello"
+                - Utterance: "Hi"
+                - Utterance: "Start"
+                - Utterance: "Begin"
+                - Utterance: "I need assistance"
+
+            #################################################
+            # Validate User Intent
+            #################################################
+            - Name: ValidateUserIntent
+              Description: >
+                Collects and validates the customer identifier.
+              SampleUtterances:
+                - Utterance: "My customer ID is {UserIdentifier}"
+                - Utterance: "My ID is {UserIdentifier}"
+                - Utterance: "{UserIdentifier}"
+              Slots:
+                - Name: UserIdentifier
+                  Description: Unique Customer Identifier
+                  SlotTypeName: AMAZON.AlphaNumeric
+                  ValueElicitationSetting:
+                    SlotConstraint: Required
+                    PromptSpecification:
+                      MaxRetries: 3
+                      MessageGroupsList:
+                        - Message:
+                            PlainTextMessage:
+                              Value: "Please provide your customer ID."
+              SlotPriorities:
+                - Priority: 1
+                  SlotName: UserIdentifier
+
+            #################################################
+            # Fallback Intent
+            #################################################
+            - Name: FallbackIntent
+              ParentIntentSignature: AMAZON.FallbackIntent
+
+Outputs:
+  LexBotId:
+    Description: Lex Bot Identifier
+    Value: !Ref LexBot
+  LexBotArn:
+    Description: Lex Bot ARN
+    Value: !GetAtt LexBot.Arn
+  LexBotRoleArn:
+    Description: Lex Bot IAM Role ARN
+    Value: !GetAtt LexBotRole.Arn

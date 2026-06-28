@@ -1,38 +1,46 @@
 AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+  ArtiFactBucketName:
+    Type: String
+    Description: S3 bucket where Lambda artifacts are stored
 Resources:
   DynamoDBStack:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: 
-        https://s3.ap-south-1.amazonaws.com/ct05-cloudformation-artifacts/b53e2d5873b78a2b84413b4edcf183ce.template
+        https://s3.ap-southeast-1.amazonaws.com/ct05-cloudformation-artifacts-singapore/b53e2d5873b78a2b84413b4edcf183ce.template
   IAMRolesStack:
     Type: AWS::CloudFormation::Stack
     DependsOn: DynamoDBStack
     Properties:
       TemplateURL: 
-        https://s3.ap-south-1.amazonaws.com/ct05-cloudformation-artifacts/f34ad18e0fae36915898a81758899445.template
+        https://s3.ap-southeast-1.amazonaws.com/ct05-cloudformation-artifacts-singapore/f34ad18e0fae36915898a81758899445.template
   LambdaStack1:
     Type: AWS::CloudFormation::Stack
     DependsOn: IAMRolesStack
     Properties:
       TemplateURL: 
-        https://s3.ap-south-1.amazonaws.com/ct05-cloudformation-artifacts/146653145c9c3e65711ad14058576ccd.template
+        https://s3.ap-southeast-1.amazonaws.com/ct05-cloudformation-artifacts-singapore/09274fe904b8c9e4fe6acf59eca2f758.template
       Parameters:
         LambdaExecutionRoleArn:
           Fn::GetAtt:
           - IAMRolesStack
           - Outputs.LambdaExecutionRoleArn
+        ArtiFactBucketName:
+          Ref: ArtiFactBucketName
   LambdaStack2:
     Type: AWS::CloudFormation::Stack
     DependsOn: IAMRolesStack
     Properties:
       TemplateURL: 
-        https://s3.ap-south-1.amazonaws.com/ct05-cloudformation-artifacts/7a4978a51d0155aa7e42c91ed1c8bd32.template
+        https://s3.ap-southeast-1.amazonaws.com/ct05-cloudformation-artifacts-singapore/4820bbabc755f2a95cf6f7084173be2d.template
       Parameters:
         LambdaExecutionRoleArn:
           Fn::GetAtt:
           - IAMRolesStack
           - Outputs.LambdaExecutionRoleArn
+        ArtiFactBucketName:
+          Ref: ArtiFactBucketName
   LexBotStack:
     Type: AWS::CloudFormation::Stack
     DependsOn:
@@ -40,4 +48,4 @@ Resources:
     - LambdaStack2
     Properties:
       TemplateURL: 
-        https://s3.ap-south-1.amazonaws.com/ct05-cloudformation-artifacts/c857d2e30e2ac84c57b19012fe0154a5.template
+        https://s3.ap-southeast-1.amazonaws.com/ct05-cloudformation-artifacts-singapore/9acb64adfaac49a4c2dbde07945eeec0.template

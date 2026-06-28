@@ -2,16 +2,18 @@ AWSTemplateFormatVersion: '2010-09-09'
 Parameters:
   LambdaExecutionRoleArn:
     Type: String
+  ArtiFactBucketName:
+    Type: String
 Resources:
   HandleConversationFunction:
     Type: AWS::Lambda::Function
     Properties:
       FunctionName: CT05_Handle_Conversation
       Runtime: python3.12
-      Handler: lambda_function.lambda_handler
+      Handler: lambda_handler.lambda_handler
       Role: !Ref LambdaExecutionRoleArn
       Code:
-        S3Bucket: ct05-cloudformation-artifacts
+        S3Bucket: !Ref ArtiFactBucketName
         S3Key: handle_conversation.zip
       Timeout: 30
       Environment:

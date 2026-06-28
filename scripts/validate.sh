@@ -1,6 +1,7 @@
 log_info "Validating CloudFormation template..."
-
-AWS_REGION="ap-south-1"
+# Source shared config
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/config/config.sh"
 
 aws cloudformation validate-template \
     --template-body file://cloudformation/main.yaml \
