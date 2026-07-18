@@ -5,6 +5,7 @@ import urllib.error
 import urllib.request
 
 import boto3
+from botocore.config import Config
 from botocore.exceptions import ClientError
 
 logger = logging.getLogger()
@@ -18,6 +19,8 @@ TABLE_NAME = os.environ.get("TABLE_NAME", "CT05_Store_Context")
 DEFAULT_MODELS = {
     "gemini": "gemini-2.0-flash",
     "anthropic": "claude-opus-4-8",
+    # Bedrock invokes newer Claude models via inference profile IDs
+    "bedrock": "global.anthropic.claude-haiku-4-5-20251001-v1:0",
 }
 
 SYSTEM_PROMPT = (
@@ -33,6 +36,9 @@ LLM_TIMEOUT_SECONDS = 25
 dynamodb = boto3.resource("dynamodb")
 table = dynamodb.Table(TABLE_NAME)
 secrets_client = boto3.client("secretsmanager")
+bedrock_client = boto3.client(
+    "bedrock-runtime", config=Config(read_timeout=LLM_TIMEOUT_SECONDS)
+)
 
 _api_key_cache = {}
 
@@ -47,7 +53,8 @@ def lambda_handler(event, context):
         return {"statusCode": 400, "error": "user_id and message are required"}
 
     try:
-        api_key = get_api_key(LLM_SECRET_NAME)
+        # Bedrock authenticates via the execution role (IAM), not an API key
+        api_key = None if LLM_PROVIDER == "bedrock" else get_api_key(LLM_SECRET_NAME)
         reply = call_llm(message, context_summary, api_key)
     except Exception:
         logger.exception(f"LLM call failed (provider: {LLM_PROVIDER})")
@@ -100,6 +107,8 @@ def call_llm(message, context_summary, api_key):
         return call_gemini(model, user_content, api_key)
     elif LLM_PROVIDER == "anthropic":
         return call_anthropic(model, user_content, api_key)
+    elif LLM_PROVIDER == "bedrock":
+        return call_bedrock(model, user_content)
     else:
         raise ValueError(f"Unsupported LLM provider: {LLM_PROVIDER}")
 
@@ -140,6 +149,19 @@ def call_anthropic(model, user_content, api_key):
         if block.get("type") == "text":
             return block["text"]
     raise ValueError("No text content in Anthropic response")
+
+
+def call_bedrock(model, user_content):
+    """Invoke a Claude model on Bedrock via the Converse API. Uses boto3
+    from the Lambda runtime (no third-party SDK in the zip) and the
+    execution role for auth, so no API key or secret is required."""
+    response = bedrock_client.converse(
+        modelId=model,
+        system=[{"text": SYSTEM_PROMPT}],
+        messages=[{"role": "user", "content": [{"text": user_content}]}],
+        inferenceConfig={"maxTokens": 2048},
+    )
+    return response["output"]["message"]["content"][0]["text"]
 
 
 def http_post_json(url, headers, body):

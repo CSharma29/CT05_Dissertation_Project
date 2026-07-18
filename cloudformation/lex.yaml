@@ -59,6 +59,8 @@ Resources:
             - Name: WelcomeUserIntent
               Description: >
                 Greets the user and initialises the conversation session.
+              DialogCodeHook:
+                Enabled: true
               SampleUtterances:
                 - Utterance: "Hello"
                 - Utterance: "Hi"
@@ -72,6 +74,8 @@ Resources:
             - Name: ValidateUserIntent
               Description: >
                 Collects and validates the customer identifier.
+              DialogCodeHook:
+                Enabled: true
               SampleUtterances:
                 - Utterance: "My customer ID is {UserIdentifier}"
                 - Utterance: "My ID is {UserIdentifier}"
@@ -93,10 +97,50 @@ Resources:
                   SlotName: UserIdentifier
 
             #################################################
+            # Close Intent
+            #################################################
+            - Name: CloseIntent
+              Description: >
+                Ends the conversation when the customer is finished.
+              DialogCodeHook:
+                Enabled: true
+              SampleUtterances:
+                - Utterance: "Goodbye"
+                - Utterance: "Bye"
+                - Utterance: "That's all"
+                - Utterance: "That is all thanks"
+                - Utterance: "I'm done"
+                - Utterance: "No that's everything"
+                - Utterance: "End the conversation"
+
+            #################################################
             # Fallback Intent
             #################################################
             - Name: FallbackIntent
               ParentIntentSignature: AMAZON.FallbackIntent
+              DialogCodeHook:
+                Enabled: true
+
+  # Resource-based policy so any alias of this bot can invoke the
+  # conversation code hook Lambda (the hook itself is enabled on the
+  # alias, outside this template).
+  HandleConversationLexPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: CT05_Handle_Conversation
+      Action: lambda:InvokeFunction
+      Principal: lexv2.amazonaws.com
+      SourceArn: !Sub arn:aws:lex:${AWS::Region}:${AWS::AccountId}:bot-alias/${LexBot}/*
+
+  # Resource-based policy so any alias of this bot can invoke the
+  # conversation code hook Lambda.
+  LexInvokeHandleConversationPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: CT05_Handle_Conversation
+      Action: lambda:InvokeFunction
+      Principal: lexv2.amazonaws.com
+      SourceArn: !Sub arn:aws:lex:${AWS::Region}:${AWS::AccountId}:bot-alias/${LexBot}/*
 
 Outputs:
   LexBotId:

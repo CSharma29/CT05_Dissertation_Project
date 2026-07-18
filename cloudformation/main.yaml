@@ -14,6 +14,8 @@ Resources:
     DependsOn: DynamoDBStack
     Properties:
       TemplateURL: iam_roles.yaml
+      Parameters:
+        ConversationTableArn: !GetAtt DynamoDBStack.Outputs.ConversationTableArn
 
   LambdaStack1:
     Type: AWS::CloudFormation::Stack

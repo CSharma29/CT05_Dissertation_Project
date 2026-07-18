@@ -19,6 +19,7 @@ Resources:
       Environment:
         Variables:
           TABLE_NAME: CT05_Store_Context
-          LLM_PROVIDER: gemini
-          LLM_MODEL: gemini-2.0-flash
+          LLM_PROVIDER: bedrock
+          LLM_MODEL: global.anthropic.claude-haiku-4-5-20251001-v1:0
+          # Only used when LLM_PROVIDER is gemini or anthropic
           LLM_SECRET_NAME: CT05_LLM_Secret

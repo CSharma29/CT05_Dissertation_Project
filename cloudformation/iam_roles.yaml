@@ -1,5 +1,9 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: Creates the IAM Role for Lambda execution.
+Parameters:
+  ConversationTableArn:
+    Type: String
+    Description: ARN of the CT05_Store_Context DynamoDB table
 Resources:
   LambdaExecutionRole:
     Type: AWS::IAM::Role
@@ -16,6 +20,40 @@ Resources:
           - sts:AssumeRole
       ManagedPolicyArns:
       - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+      - PolicyName: CT05LambdaPermissions
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+          # handle_conversation: user_id lookup; orchestrate_conversation: history writes
+          - Sid: ConversationTableAccess
+            Effect: Allow
+            Action:
+            - dynamodb:Query
+            - dynamodb:PutItem
+            Resource: !Ref ConversationTableArn
+          # orchestrate_conversation: LLM API key (secret created manually in console)
+          - Sid: LLMSecretAccess
+            Effect: Allow
+            Action:
+            - secretsmanager:GetSecretValue
+            Resource: !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:CT05_LLM_Secret-*
+          # orchestrate_conversation: Claude via Bedrock. Foundation-model ARNs
+          # use a region wildcard because global/apac inference profiles route
+          # requests to other regions.
+          - Sid: BedrockInvoke
+            Effect: Allow
+            Action:
+            - bedrock:InvokeModel
+            Resource:
+            - !Sub arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:inference-profile/*
+            - arn:aws:bedrock:*::foundation-model/anthropic.*
+          # handle_conversation: direct invoke of orchestrate for verified-user queries
+          - Sid: InvokeOrchestrateConversation
+            Effect: Allow
+            Action:
+            - lambda:InvokeFunction
+            Resource: !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:CT05_Orchestrate_Conversation
       Path: /
 Outputs:
   LambdaExecutionRoleArn:

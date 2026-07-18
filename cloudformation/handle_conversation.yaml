@@ -19,4 +19,5 @@ Resources:
       Environment:
         Variables:
           TABLE_NAME: CT05_Store_Context
+          ORCHESTRATE_FUNCTION_NAME: CT05_Orchestrate_Conversation
       # (pass DynamoDB table name or other params)
